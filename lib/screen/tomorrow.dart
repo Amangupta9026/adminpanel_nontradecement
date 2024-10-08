@@ -4,19 +4,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutterflow_paginate_firestore/paginate_firestore.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nontradecementadminpanel/local/pref.dart';
 import 'package:nontradecementadminpanel/riverpod/login_notifier.dart';
 import 'package:nontradecementadminpanel/router/routes_names.dart';
 import 'package:nontradecementadminpanel/utils/colors.dart';
+import 'package:nontradecementadminpanel/widget/responsive_devices.dart';
 
-import '../widget/responsive_devices.dart';
-
-class Home extends ConsumerWidget {
-  const Home({super.key});
+//yesterday
+class Tomorrow extends ConsumerWidget {
+  const Tomorrow({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    int totallength;
     final refRead = ref.read(homeNotifierProvider.notifier);
+    DateTime now = DateTime.now();
+    DateTime yesterday = DateTime(now.year, now.month, now.day - 1);
+    Query<Map<String, dynamic>> length1 = FirebaseFirestore.instance
+        .collection('queryForm')
+        .orderBy('servertime', descending: true)
+        .where('servertime', isGreaterThanOrEqualTo: yesterday)
+        .where('servertime',
+            isLessThan: yesterday.add(const Duration(days: 1)));
+    length1.get().then((value) {
+      totallength = value.docs.length;
+    //  sta = AsyncData(totallength);
+    });
+
     return Scaffold(
         backgroundColor: whiteBackgroundColor,
         body: ScrollConfiguration(
@@ -91,7 +104,6 @@ class Home extends ConsumerWidget {
                                       // if value 1 show dialog
                                       if (value == 1) {
                                         context.pushNamed(RouteNames.today);
-                                        // if value 2 show dialog
                                       } else if (value == 2) {
                                         context.pushNamed(RouteNames.yesterday);
                                       } else if (value == 3) {
@@ -119,79 +131,6 @@ class Home extends ConsumerWidget {
                                 children: [
                                   InkWell(
                                     onTap: () {
-                                      refRead.onExcelSubmit();
-                                    },
-                                    child: const Text(
-                                      'Export Data',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: textColor),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 30),
-                                  InkWell(
-                                    onTap: () {
-                                      context.pushNamed(RouteNames.profile);
-                                    },
-                                    child: const Text(
-                                      'Profile',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: textColor),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 30),
-                                  InkWell(
-                                    onTap: () {
-                                      context.pushNamed(
-                                          RouteNames.assignedMobileNumber);
-                                    },
-                                    child: const Text(
-                                      'Assign Mobile no.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: textColor),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 30),
-                                  InkWell(
-                                    onTap: () {
-                                      context
-                                          .pushNamed(RouteNames.changePassword);
-                                    },
-                                    child: const Text(
-                                      'Change Credentials',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: textColor),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 30),
-                                  InkWell(
-                                    onTap: () {
-                                      context.pushNamed(RouteNames.update);
-                                    },
-                                    child: const Text(
-                                      'Update Data',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: textColor),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 30),
-                                  InkWell(
-                                    onTap: () {
-                                      Prefs.clearPrefs();
                                       context.pushNamed(RouteNames.login);
                                     },
                                     child: const Text(
@@ -213,6 +152,15 @@ class Home extends ConsumerWidget {
                             color: Colors.grey[200],
                           ),
                           const SizedBox(height: 20),
+                          // Align(
+                          //   alignment: Alignment.bottomRight,
+                          //   child: Text('Total Records: $totallength Records',
+                          //       style: const TextStyle(
+                          //           color: textColor,
+                          //           fontSize: 16,
+                          //           fontWeight: FontWeight.bold)),
+                          // ),
+                          const SizedBox(height: 10),
                           Expanded(
                             child: PaginateFirestore(
                                 itemBuilderType: PaginateBuilderType
@@ -221,7 +169,12 @@ class Home extends ConsumerWidget {
                                 // orderBy is compulsory to enable pagination
                                 query: FirebaseFirestore.instance
                                     .collection('queryForm')
-                                    .orderBy('servertime', descending: true),
+                                    .orderBy('servertime', descending: true)
+                                    .where('servertime',
+                                        isGreaterThanOrEqualTo: yesterday)
+                                    .where('servertime',
+                                        isLessThan: yesterday
+                                            .add(const Duration(days: 1))),
                                 itemsPerPage: 10,
                                 // to fetch real-time data
                                 // isLive: true,
@@ -238,6 +191,7 @@ class Home extends ConsumerWidget {
                                           (form?['servertime'] as Timestamp)
                                               .microsecondsSinceEpoch);
                                   final datetrim = date.toString();
+
                                   String trimDateTime(String datetrim) {
                                     final timestamp = DateTime.parse(datetrim);
                                     final trimmedDateTime = DateTime(
@@ -488,11 +442,6 @@ class Home extends ConsumerWidget {
                                                       ),
                                                     ],
                                                   ),
-                                                  // const SizedBox(height: 20),
-                                                  // Divider(
-                                                  //   thickness: 3,
-                                                  //   color: Colors.grey[500],
-                                                  // ),
                                                 ],
                                               ),
                                             ),
@@ -566,7 +515,6 @@ class Home extends ConsumerWidget {
                                       // if value 1 show dialog
                                       if (value == 1) {
                                         context.pushNamed(RouteNames.today);
-                                        // if value 2 show dialog
                                       } else if (value == 2) {
                                         context.pushNamed(RouteNames.yesterday);
                                       } else if (value == 3) {
@@ -574,7 +522,7 @@ class Home extends ConsumerWidget {
                                       }
                                     },
                                   ),
-                                  const SizedBox(width: 10),
+                                  const SizedBox(width: 20),
                                   InkWell(
                                     onTap: () {
                                       context.pushNamed(RouteNames.home);
@@ -590,105 +538,26 @@ class Home extends ConsumerWidget {
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  refRead.onExcelSubmit();
-                                },
-                                child: const Text(
-                                  'Export Data',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor),
-                                ),
-                              ),
-                              const SizedBox(width: 30),
-                              InkWell(
-                                onTap: () {
-                                  context.pushNamed(RouteNames.profile);
-                                },
-                                child: const Text(
-                                  'Profile',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  context.pushNamed(RouteNames.changePassword);
-                                },
-                                child: const Text(
-                                  'Change Credentials',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor),
-                                ),
-                              ),
-                              const SizedBox(width: 30),
-                              InkWell(
-                                onTap: () {
-                                  context.pushNamed(RouteNames.update);
-                                },
-                                child: const Text(
-                                  'Update Data',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  context.pushNamed(
-                                      RouteNames.assignedMobileNumber);
-                                },
-                                child: const Text(
-                                  'Assign Mobile no.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor),
-                                ),
-                              ),
-                              InkWell(
-                                onTap: () {
-                                  Prefs.clearPrefs();
-                                  context.pushNamed(RouteNames.login);
-                                },
-                                child: const Text(
-                                  'Logout',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor),
-                                ),
+                              Row(
+                                children: [
+                                  Column(
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          context.pushNamed(RouteNames.login);
+                                        },
+                                        child: const Text(
+                                          'Logout',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: textColor),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -705,7 +574,12 @@ class Home extends ConsumerWidget {
                                 // orderBy is compulsory to enable pagination
                                 query: FirebaseFirestore.instance
                                     .collection('queryForm')
-                                    .orderBy('servertime', descending: true),
+                                    .orderBy('servertime', descending: true)
+                                    .where('servertime',
+                                        isGreaterThanOrEqualTo: yesterday)
+                                    .where('servertime',
+                                        isLessThan: yesterday
+                                            .add(const Duration(days: 1))),
                                 itemsPerPage: 10,
                                 // to fetch real-time data
                                 // isLive: true,
@@ -722,6 +596,7 @@ class Home extends ConsumerWidget {
                                           (form?['servertime'] as Timestamp)
                                               .microsecondsSinceEpoch);
                                   final datetrim = date.toString();
+
                                   String trimDateTime(String datetrim) {
                                     final timestamp = DateTime.parse(datetrim);
                                     final trimmedDateTime = DateTime(
@@ -735,187 +610,200 @@ class Home extends ConsumerWidget {
                                     return trimmedTimestamp.toDate().toString();
                                   }
 
-                                  return Row(
+                                  return Column(
                                     children: [
-                                      Text(index.toString(),
-                                          style: const TextStyle(
-                                              color: textColor,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
-                                      const SizedBox(width: 20),
-                                      Expanded(
-                                        child: Container(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              20, 10, 20, 10),
-                                          margin:
-                                              const EdgeInsets.only(bottom: 20),
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: Colors.grey[300]!,
-                                                width: 1.0),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
+                                      Row(
+                                        children: [
+                                          Text(index.toString(),
+                                              style: const TextStyle(
+                                                  color: textColor,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold)),
+                                          const SizedBox(width: 20),
+                                          Expanded(
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      20, 10, 20, 10),
+                                              margin: const EdgeInsets.only(
+                                                  bottom: 20),
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.grey[300]!,
+                                                    width: 1.0),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: Column(
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      const Text(
+                                                        'Name:',
+                                                        style: TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        form?['name'] ?? '',
+                                                        style: const TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      const Text(
+                                                        'Email:',
+                                                        style: TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        form?['email'] ?? '',
+                                                        style: const TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      const Text(
+                                                        'Number: ',
+                                                        style: TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        form?['number'] ?? '',
+                                                        style: const TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      const Text(
+                                                        'Quantity:',
+                                                        style: TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        form?['quantity'] ?? '',
+                                                        style: const TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      const Text(
+                                                        'Company:',
+                                                        style: TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        form?['selected_company'] ??
+                                                            '',
+                                                        style: const TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      const Text(
+                                                        'Date:',
+                                                        style: TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        trimDateTime(datetrim),
+                                                        style: const TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      const Text(
+                                                        'Message: ',
+                                                        style: TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        form?['message'] ?? '',
+                                                        style: const TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
-                                          child: Column(
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  const Text(
-                                                    'Name:',
-                                                    style: TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    form?['name'] ?? '',
-                                                    style: const TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                children: [
-                                                  const Text(
-                                                    'Email:',
-                                                    style: TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    form?['email'] ?? '',
-                                                    style: const TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                children: [
-                                                  const Text(
-                                                    'Number: ',
-                                                    style: TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    form?['number'] ?? '',
-                                                    style: const TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                children: [
-                                                  const Text(
-                                                    'Quantity:',
-                                                    style: TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    form?['quantity'] ?? '',
-                                                    style: const TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                children: [
-                                                  const Text(
-                                                    'Company:',
-                                                    style: TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    form?['selected_company'] ??
-                                                        '',
-                                                    style: const TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Date:',
-                                                    style: TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Expanded(
-                                                    child: Text(
-                                                      trimDateTime(datetrim),
-                                                      style: const TextStyle(
-                                                          color: textColor,
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                children: [
-                                                  const Text(
-                                                    'Message: ',
-                                                    style: TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    form?['message'] ?? '',
-                                                    style: const TextStyle(
-                                                        color: textColor,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                        ],
                                       ),
                                     ],
                                   );
